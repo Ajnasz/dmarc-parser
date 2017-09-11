@@ -1,41 +1,62 @@
 package main
 
 import (
+	"bufio"
 	"encoding/xml"
 	"flag"
+	"fmt"
 	"io/ioutil"
-	"log"
+	"os"
 )
 
 var xmlFile string
 
 func init() {
-	flag.StringVar(&xmlFile, "fileName", "", "XML file name")
+	flag.StringVar(&xmlFile, "fileName", "", "XML file name. If omitted, stdin will be used")
 
 	flag.Parse()
 }
 
+func fatal(err ...interface{}) {
+	fmt.Fprintf(os.Stderr, fmt.Sprint(err...))
+	fmt.Fprintf(os.Stderr, "\n")
+	os.Exit(1)
+}
+
 func main() {
 	v := Feedback{}
-	content, err := ioutil.ReadFile(xmlFile)
 
-	if err != nil {
-		log.Fatal(err)
+	var content []byte
+	var err error
+
+	if xmlFile == "" {
+		reader := bufio.NewReader(os.Stdin)
+		content, err = ioutil.ReadAll(reader)
+
+		if err != nil {
+			fatal(err)
+		}
+	} else {
+		content, err = ioutil.ReadFile(xmlFile)
+
+		if err != nil {
+			fatal(err)
+		}
 	}
 
 	err = xml.Unmarshal(content, &v)
 
 	if err != nil {
-		log.Fatal(err)
+		fatal(err)
 	}
 
 	for _, record := range v.Records {
 		if record.AuthResults.Dkim.Result != "pass" {
-			log.Fatal("dkim", " ", record.AuthResults.Dkim.GetStatus())
+			fatal(fmt.Sprintf("dkim %s", record.AuthResults.Dkim.GetStatus()))
 		}
 
 		if record.AuthResults.Spf.Result != "pass" {
-			log.Fatal("spf", " ", record.AuthResults.Spf.GetStatus())
+			fatal(fmt.Sprintf("spf %s", record.AuthResults.Spf.GetStatus()))
 		}
 	}
 }
