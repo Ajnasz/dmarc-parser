@@ -5,7 +5,7 @@ import (
 	"encoding/xml"
 	"flag"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 )
 
@@ -31,13 +31,13 @@ func main() {
 
 	if xmlFile == "" {
 		reader := bufio.NewReader(os.Stdin)
-		content, err = ioutil.ReadAll(reader)
+		content, err = io.ReadAll(reader)
 
 		if err != nil {
 			fatal(err)
 		}
 	} else {
-		content, err = ioutil.ReadFile(xmlFile)
+		content, err = os.ReadFile(xmlFile)
 
 		if err != nil {
 			fatal(err)
